@@ -1,9 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handleTakeScreenshot } from '../dist/tools/screenshot.js';
+import { handleTakeScreenshot, validateScreenshotImage } from '../dist/tools/screenshot.js';
 
 test('take_screenshot rejects invalid image dimensions', async () => {
     await assert.rejects(() => handleTakeScreenshot({ max_width: 10 }), /max_width|Windows/);
+    await assert.rejects(() => handleTakeScreenshot({ max_width: 999999 }), /max_width|Windows/);
+    await assert.rejects(() => handleTakeScreenshot({ max_width: 100.5 }), /max_width|Windows/);
+});
+
+test('screenshot validation rejects non-image data', () => {
+    assert.throws(() => validateScreenshotImage(''), /invalid base64/);
+    assert.throws(() => validateScreenshotImage('not-base64!'), /invalid base64/);
+    assert.throws(() => validateScreenshotImage(Buffer.from('hello').toString('base64')), /invalid or oversized JPEG/);
 });
 
 test('take_screenshot returns a real MCP image block on an interactive Windows desktop', {
@@ -13,5 +21,5 @@ test('take_screenshot returns a real MCP image block on an interactive Windows d
     assert.equal(result.content.length, 1);
     assert.equal(result.content[0].type, 'image');
     assert.equal(result.content[0].mimeType, 'image/jpeg');
-    assert.ok(Buffer.from(result.content[0].data, 'base64').subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])));
+    validateScreenshotImage(result.content[0].data);
 });
