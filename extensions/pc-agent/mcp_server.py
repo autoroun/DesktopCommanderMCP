@@ -153,4 +153,32 @@ def adb_screenshot(serial:str)->Image:
     if p.returncode:raise RuntimeError(p.stderr.decode(errors="replace")[:300])
     return Image(data=p.stdout,format="png")
 
+@mcp.tool()
+def queue_verification(title:str,kind:str)->dict:
+    """Queue an allowlisted verification job, independent of the chat session."""
+    import job_runner
+    if kind not in job_runner.COMMANDS:raise ValueError("Unsupported verification kind")
+    log("queue_verification")
+    return job_runner.add(title[:120],kind)
+
+@mcp.tool()
+def verification_status()->list[dict]:
+    """Read recent persistent verification job statuses."""
+    import job_runner
+    return job_runner.status()
+
+@mcp.tool()
+def run_next_verification()->dict:
+    """Execute one queued verification job, with a 45-second timeout."""
+    import job_runner
+    log("run_next_verification")
+    return job_runner.tick()
+
+@mcp.tool()
+def stop_queued_verification(job_id:int)->dict:
+    """Cancel a job that has not yet started."""
+    import job_runner
+    log("stop_queued_verification")
+    return job_runner.stop(job_id)
+
 if __name__=="__main__":mcp.run(transport="stdio")
