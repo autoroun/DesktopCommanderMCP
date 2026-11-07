@@ -181,4 +181,31 @@ def stop_queued_verification(job_id:int)->dict:
     log("stop_queued_verification")
     return job_runner.stop(job_id)
 
+@mcp.tool()
+def start_continuation(goal:str,next_step:str)->dict:
+    """Persist a long-running user goal across ChatGPT sessions; does not keep chat alive."""
+    import continuation
+    log("start_continuation")
+    return continuation.start(goal,next_step)
+
+@mcp.tool()
+def checkpoint_continuation(task_id:int,summary:str,next_step:str)->dict:
+    """Save progress and the next action before a session ends."""
+    import continuation
+    log("checkpoint_continuation")
+    return continuation.update(task_id,summary,next_step)
+
+@mcp.tool()
+def list_continuations(task_id:int|None=None)->list[dict]:
+    """Recover persistent tasks and the exact next step after reconnecting."""
+    import continuation
+    return continuation.status(task_id)
+
+@mcp.tool()
+def stop_continuation(task_id:int)->dict:
+    """Mark a continuation as stopped; subsequent checkpoints are rejected."""
+    import continuation
+    log("stop_continuation")
+    return continuation.stop(task_id)
+
 if __name__=="__main__":mcp.run(transport="stdio")
