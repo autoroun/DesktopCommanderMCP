@@ -25,3 +25,5 @@ jobs:
         run: python extensions/pc-agent/test_mcp.py
       - name: Security regression
         run: python extensions/pc-agent/test_security.py
+      - name: OpenAI worker offline regression
+        run: python extensions/pc-agent/test_openai_worker.py
