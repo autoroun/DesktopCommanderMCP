@@ -215,4 +215,17 @@ def advance_continuation(task_id:int,completed_step:str,result:str,next_step:str
     log("advance_continuation")
     return continuation.advance(task_id,completed_step,result,next_step)
 
+@mcp.tool()
+def set_continuation_mode(task_id:int,mode:str,minutes:int|None=None,until_utc:str|None=None)->dict:
+    """Set a user-requested continuation mode: continuous (until stopped), timed (1-1440 min or timezone-aware deadline), manual, stopped. Persistent scheduling only; cannot keep ChatGPT running."""
+    import continuation_mode
+    log("set_continuation_mode")
+    return continuation_mode.set_mode(task_id,mode,minutes,until_utc)
+
+@mcp.tool()
+def get_continuation_mode(task_id:int)->dict:
+    """Check active mode, deadline, and automatic expiration before continuing."""
+    import continuation_mode
+    return continuation_mode.get_mode(task_id)
+
 if __name__=="__main__":mcp.run(transport="stdio")

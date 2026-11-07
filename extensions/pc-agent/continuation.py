@@ -27,6 +27,8 @@ def start(goal,next_step):
   con.execute("INSERT INTO continuation_events(task_id,event,created) VALUES(?,?,?)",(cur.lastrowid,"Task created",t))
   return {"task_id":cur.lastrowid,"status":"active"}
 def update(task_id,summary,next_step):
+ import continuation_mode
+ continuation_mode.guard(task_id)
  if len(summary)>8000 or len(next_step)>4000:raise ValueError("Checkpoint too long")
  with LOCK,connection() as con:
   row=con.execute("SELECT status FROM continuations WHERE id=?",(task_id,)).fetchone()
@@ -48,6 +50,8 @@ def status(task_id=None):
   return [dict(x) for x in rows]
 def advance(task_id,completed_step,result,next_step):
  """Atomically record completed work and the next planned step."""
+ import continuation_mode
+ continuation_mode.guard(task_id)
  if not completed_step.strip() or not next_step.strip():raise ValueError("Completed and next steps required")
  if max(len(completed_step),len(result),len(next_step))>4000:raise ValueError("Step too long")
  with LOCK,connection() as con:

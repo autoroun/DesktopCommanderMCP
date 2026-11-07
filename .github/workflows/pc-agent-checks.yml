@@ -27,3 +27,5 @@ jobs:
         run: python extensions/pc-agent/test_security.py
       - name: Continuation checkpoint regression
         run: python extensions/pc-agent/test_continuation.py
+      - name: Continuation mode regression
+        run: python extensions/pc-agent/test_continuation_mode.py
