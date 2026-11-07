@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+mcp-config.example.json
+screen_*.png
+screen_*.jpg
+config.json
+*.db
+*.sqlite
