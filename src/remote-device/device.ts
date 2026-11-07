@@ -796,7 +796,12 @@ export class MCPDevice {
             return;
         }
 
-        console.log(`✅ Tool call ${tool_name} completed:\r\n ${JSON.stringify(result)}`);
+        // Never print full tool results: screenshots contain private pixels encoded as base64,
+        // and file/terminal results may contain credentials or other sensitive content.
+        const contentTypes = Array.isArray(result?.content)
+            ? result.content.map((item: any) => item?.type ?? 'unknown')
+            : [];
+        console.log(`Tool call ${tool_name} completed (content types: ${contentTypes.join(", ")})`);
 
         // The tool ran. A result that can't be saved is reported and written as
         // failed, as before, but its telemetry stays "tool_call_completed"
