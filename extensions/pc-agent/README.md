@@ -1,15 +1,7 @@
-# PC Agent (Windows)
-
-Optional Windows helper for the Desktop Commander fork. Runs only on demand; it is not yet wired as a first-class MCP tool.
-
-## Requirements
-- Windows and Python 3.10+
-- Pillow for screenshots (`python -m pip install pillow`)
-- Optional Android platform-tools (`adb` on PATH)
+# Windows PC Agent extension (experimental)
+This is a separate on-demand Python helper, **not yet registered as native MCP tools**. It does not modify the installed Desktop Commander remote agent.
 
 ## Usage
-From the repository root:
-
 ```powershell
 python extensions/pc-agent/pc_agent.py status
 python extensions/pc-agent/pc_agent.py windows
@@ -17,16 +9,29 @@ python extensions/pc-agent/pc_agent.py clipboard
 python extensions/pc-agent/pc_agent.py screenshot
 python extensions/pc-agent/pc_agent.py adb
 python extensions/pc-agent/pc_agent.py projects
+python extensions/pc-agent/pc_agent.py project-files --path C:\\MyProjects
 ```
 
-The clipboard command reads only the **current** clipboard text; Windows Win+V pinned history is not supported. `projects` does not scan files until allowed roots are configured. Screenshots are saved locally and must not be committed. This helper has no listener, background tracking, or administrator privilege escalation.
+Optional Pillow: `python -m pip install pillow`. Android ADB requires Android platform-tools on PATH.
 
-## Development roadmap
-- Explicit per-action permission checks and audit logs
-- Native Windows UI Automation with foreground user confirmation
-- Clipboard history integration if supported by user-session APIs
-- ADB path discovery and device confirmation
-- Configurable project roots and safe database connectors
-- Tests, CI, and a one-command installer
+## Permissions
+Default: GUI actions **disabled**; project roots **empty**. To opt in, create `%USERPROFILE%\.pc-agent\config.json`:
+```json
+{
+  "project_roots": ["C:\\MyProjects"],
+  "enable_gui_actions": false
+}
+```
+Set `enable_gui_actions` to true only when actively supervising the desktop. Then `python extensions/pc-agent/pc_agent.py click --x 200 --y 300` clicks a screen coordinate. No automated click is performed by installation or tests. This is **not** a security sandbox: Desktop Commander itself may have broader filesystem access.
 
-Do not commit credentials, clipboard content, screenshots, device IDs or local session files.
+The helper writes audit metadata to `%USERPROFILE%\.pc-agent\audit.jsonl` and screenshots to the same private folder, outside Git. The audit records action names and success, not clipboard content. Do not commit private data or credentials.
+
+## Limitations
+Windows Win+V pinned clipboard history is not exposed by this helper. Clipboard reads only the current text. Screenshot and GUI operations need an interactive desktop session. No database write tools or unattended GUI control are implemented yet.
+
+## Next steps
+- Windows UI Automation selectors instead of coordinate-only clicks
+- Windows clipboard history API feasibility and permissions testing
+- ADB discovery and explicit device selection
+- Native MCP tool registration with per-tool confirmation
+- Installer, automated tests and Windows CI
