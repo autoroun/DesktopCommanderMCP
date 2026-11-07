@@ -41,7 +41,7 @@ def cycle(max_budget):
     # Enforce repository scope after execution; refuse further cycles on unexpected changes.
     unexpected=[line for line in changed if not line[3:].replace("\\","/").startswith("extensions/pc-agent/")]
     if unexpected:return {"state":"blocked","reason":"Unexpected files changed","files":unexpected}
-    if not changed:return {"state":"no_changes","exit_code":p.returncode,"summary":p.stdout[-1200:]}
+    if not changed:return {"state":"no_changes" if p.returncode==0 else "failed","exit_code":p.returncode,"summary":(p.stdout+"\\n"+p.stderr)[-1200:]}
     checks=verify()
     passed=all(v["passed"] for v in checks.values())
     return {"state":"verified" if passed else "tests_failed","exit_code":p.returncode,"files":changed,"tests":checks,"summary":p.stdout[-1500:],"base_commit":before}
