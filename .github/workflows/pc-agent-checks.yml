@@ -1,0 +1,27 @@
+name: PC Agent MCP checks
+on:
+  push:
+    paths:
+      - 'extensions/pc-agent/**'
+      - '.github/workflows/pc-agent-checks.yml'
+  pull_request:
+    paths:
+      - 'extensions/pc-agent/**'
+      - '.github/workflows/pc-agent-checks.yml'
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install MCP dependencies
+        run: python -m pip install -r extensions/pc-agent/requirements.txt
+      - name: Syntax check
+        run: python -m py_compile extensions/pc-agent/mcp_server.py
+      - name: MCP protocol integration
+        run: python extensions/pc-agent/test_mcp.py
+      - name: Security regression
+        run: python extensions/pc-agent/test_security.py
