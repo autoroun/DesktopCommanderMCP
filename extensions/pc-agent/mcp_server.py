@@ -208,4 +208,11 @@ def stop_continuation(task_id:int)->dict:
     log("stop_continuation")
     return continuation.stop(task_id)
 
+@mcp.tool()
+def advance_continuation(task_id:int,completed_step:str,result:str,next_step:str)->dict:
+    """Atomically finish the current step and register the next one; no autonomous chat loop."""
+    import continuation
+    log("advance_continuation")
+    return continuation.advance(task_id,completed_step,result,next_step)
+
 if __name__=="__main__":mcp.run(transport="stdio")

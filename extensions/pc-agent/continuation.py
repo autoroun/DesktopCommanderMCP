@@ -46,3 +46,16 @@ def status(task_id=None):
   if task_id is None:rows=con.execute("SELECT * FROM continuations ORDER BY updated DESC LIMIT 20")
   else:rows=con.execute("SELECT * FROM continuations WHERE id=?",(task_id,))
   return [dict(x) for x in rows]
+def advance(task_id,completed_step,result,next_step):
+ """Atomically record completed work and the next planned step."""
+ if not completed_step.strip() or not next_step.strip():raise ValueError("Completed and next steps required")
+ if max(len(completed_step),len(result),len(next_step))>4000:raise ValueError("Step too long")
+ with LOCK,connection() as con:
+  row=con.execute("SELECT status,next_step FROM continuations WHERE id=?",(task_id,)).fetchone()
+  if not row:raise ValueError("Task not found")
+  if row[0]!="active":raise ValueError("Task stopped")
+  if row[1]!=completed_step:raise ValueError("Step mismatch: reload current task before advancing")
+  t=now()
+  con.execute("UPDATE continuations SET next_step=?,summary=?,updated=? WHERE id=?",(next_step,result,t,task_id))
+  con.execute("INSERT INTO continuation_events(task_id,event,created) VALUES(?,?,?)",(task_id,json.dumps({"completed":completed_step,"result":result,"next":next_step},ensure_ascii=False),t))
+  return {"task_id":task_id,"completed":completed_step,"next_step":next_step,"updated":t}
