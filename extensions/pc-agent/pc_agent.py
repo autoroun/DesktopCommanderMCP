@@ -37,13 +37,20 @@ def clipboard():
     if os.name!="nt":return {"error":"Windows only"}
     r=run(["powershell","-NoProfile","-STA","-Command","Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::GetText()"])
     return {"note":"Current text only; Windows Win+V pinned history is unsupported","result":r}
-def screenshot():
+def screenshot(max_width=1600, quality=78):
     try:
         from PIL import ImageGrab
+        if not 320 <= max_width <= 3840 or not 30 <= quality <= 95:
+            return {"error":"Invalid image dimensions or quality"}
         DATA.mkdir(exist_ok=True)
-        path=DATA/("screen_"+datetime.datetime.now().strftime("%Y%m%d_%H%M%S")+".png")
-        ImageGrab.grab().save(path)
-        return {"saved":str(path)}
+        path=DATA/("screen_"+datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")+".jpg")
+        shot=ImageGrab.grab()
+        original=shot.size
+        if shot.width>max_width:
+            height=max(1,round(shot.height*max_width/shot.width))
+            shot=shot.resize((max_width,height))
+        shot.convert("RGB").save(path,format="JPEG",quality=quality,optimize=True)
+        return {"saved":str(path),"original_size":original,"image_size":shot.size,"bytes":path.stat().st_size,"next_step":"Use Remote Desktop Commander read_file on saved path to view image in ChatGPT"}
     except Exception as e:return {"error":str(e),"hint":"Install pillow"}
 def roots():
     result=[]
