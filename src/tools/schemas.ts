@@ -248,7 +248,12 @@ export const TrackUiEventArgsSchema = z.object({
  * about parameters a caller sent that the tool does not support. Keep in sync
  * with the tool definitions in server.ts.
  */
+export const TakeScreenshotArgsSchema = z.object({
+  max_width: z.number().int().min(320).max(3840).optional(),
+});
+
 export const toolArgSchemas: Record<string, z.ZodTypeAny> = {
+  take_screenshot: TakeScreenshotArgsSchema,
   get_config: GetConfigArgsSchema,
   set_config_value: SetConfigValueArgsSchema,
   read_file: ReadFileArgsSchema,

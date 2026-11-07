@@ -1,4 +1,5 @@
 import path from 'path';
+import { handleTakeScreenshot } from './tools/screenshot.js';
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
     CallToolRequestSchema,
@@ -38,6 +39,7 @@ import {
     ForceTerminateArgsSchema,
     ListSessionsArgsSchema,
     KillProcessArgsSchema,
+    TakeScreenshotArgsSchema,
     ReadFileArgsSchema,
     ReadMultipleFilesArgsSchema,
     WriteFileArgsSchema,
@@ -364,6 +366,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 },
             },
 
+            // Screen capture: image is returned directly in the MCP tool response.
+            {
+                name: "take_screenshot",
+                description: "Capture the current Windows desktop and return the actual image directly in this chat. Use for requests like 'PC'den SS at', 'ekran goruntusu gonder', or 'show my screen'. Never respond with just a local file path. Requires an interactive desktop and Python Pillow.",
+                inputSchema: zodToJsonSchema(TakeScreenshotArgsSchema),
+            },
             // Filesystem tools
             {
                 name: "read_file",
@@ -1359,6 +1367,11 @@ async function handleCallToolRequest(request: CallToolRequest): Promise<ServerRe
                 break;
 
             // Note: REPL functionality removed in favor of using general terminal commands
+
+            // Screenshot: return an image content block to the MCP client.
+            case "take_screenshot":
+                result = await handleTakeScreenshot(args ?? {});
+                break;
 
             // Filesystem tools
             case "read_file":
