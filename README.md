@@ -106,6 +106,8 @@ Optional `request_id` deduplicates identical calls for the lifetime of that serv
 
 Use `wait_for_window` with `title` and optional `timeout_ms` (100–10000 ms) to wait for an exact foreground title and obtain a fresh observation. Use `scroll` with `amount` (-20–20, positive up) or `right_click` with image coordinates.
 
+MCP initialization instructions and the responses of `get_config`, `start_process` and `list_sessions` include the desktop workflow and the actual installed bridge command on Windows. This lets clients discover the workflow through their existing tools. The hosted gateway controls its published tool catalog.
+
 ### Clients exposing terminal tools with a fixed tool list
 
 Start `node C:\Users\uke\DesktopCommanderMCP-Dev\dist\windows-desktop-cli.js` using `start_process` and retain the returned PID. The CLI prints its input schema. Send each action as one JSON line using `interact_with_process` on that same PID. Start with `{"action":"observe"}`. Open the returned `image_path` with `read_file` to actually view the desktop. Each observation writes a uniquely named JPEG to a session folder under the system temporary directory.

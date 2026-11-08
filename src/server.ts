@@ -1,3 +1,4 @@
+import { desktopAutomationGuidance } from './utils/desktop-automation-guidance.js';
 import path from 'path';
 import { handleWindowsDesktop } from './tools/windows-desktop.js';
 import { handleTakeScreenshot } from './tools/screenshot.js';
@@ -31,7 +32,9 @@ const SERVER_INSTRUCTIONS = `Desktop Commander provides tools for working with t
 - Terminal process tools support shell commands, REPLs, and long-running processes. start_process creates a process session; interact_with_process sends input; read_process_output reads later output; force_terminate ends a session.
 - Search tools are session-based. start_search creates a search session; get_more_search_results reads its results; stop_search ends it early.
 - Absolute paths are generally the most reliable because relative paths depend on the active working directory.
-- allowedDirectories and each tool's schema, annotations, and documented constraints define the operational boundaries.`;
+- allowedDirectories and each tool's schema, annotations, and documented constraints define the operational boundaries.
+
+${desktopAutomationGuidance()}`;
 
 import {
     StartProcessArgsSchema,
@@ -1448,6 +1451,12 @@ async function handleCallToolRequest(request: CallToolRequest): Promise<ServerRe
                     content: [{ type: "text", text: `Error: Unknown tool: ${name}` }],
                     isError: true,
                 };
+        }
+
+        // Tool-result text reaches gateways even when their published catalog is fixed.
+        if (['get_config', 'start_process', 'list_sessions'].includes(name)) {
+            const guidance = desktopAutomationGuidance();
+            if (guidance) result.content.push({ type: 'text', text: guidance });
         }
 
         // What the client receives (and the history records): facts kept internal are dropped
