@@ -1,4 +1,4 @@
-import { desktopAutomationGuidance } from './utils/desktop-automation-guidance.js';
+import { desktopAutomationGuidance, screenshotPresentationGuidance } from './utils/desktop-automation-guidance.js';
 import path from 'path';
 import { handleWindowsDesktop } from './tools/windows-desktop.js';
 import { handleTakeScreenshot } from './tools/screenshot.js';
@@ -1457,6 +1457,10 @@ async function handleCallToolRequest(request: CallToolRequest): Promise<ServerRe
         if (['get_config', 'start_process', 'list_sessions'].includes(name)) {
             const guidance = desktopAutomationGuidance();
             if (guidance) result.content.push({ type: 'text', text: guidance });
+        }
+
+        if (result.content.some(block => block.type === 'image')) {
+            result.content.push({ type: 'text', text: screenshotPresentationGuidance() });
         }
 
         // What the client receives (and the history records): facts kept internal are dropped
