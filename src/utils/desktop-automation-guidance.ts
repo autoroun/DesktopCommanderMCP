@@ -11,6 +11,9 @@ export function desktopAutomationGuidance(): string {
     return [
         'Windows desktop automation is available on this device (requires an unlocked interactive desktop and Python with Pillow, pywin32 and pywinauto).',
         'For a user-authorized screen, application, mouse, keyboard or login task, use windows_desktop when that tool is exposed.',
+        'This fork supports an optional local Windows Commander MCP companion: discover with windows_companion_list_tools, then inspect with windows_companion_call_tool (read-only allowlist, strict schemas). These are tools on this MCP server, not a separate ChatGPT connector.',
+        'If companion tools are not visible in a fixed-catalog chat gateway, the standard installation can be inspected through the existing start_process terminal tool; do not claim the native companion tools are exposed when they are not.',
+        'Never disable local access restrictions, overwrite passwords, bypass confirmations or assume a tool is available without first inspecting its result.',
         'If windows_desktop is absent from your tool list, use the existing terminal tools with this installed bridge.',
         '1. Call start_process with shell "powershell.exe" and command ' + JSON.stringify(command) + '. Retain its returned PID. The bridge prints the JSON input schema.',
         '2. Call interact_with_process on that PID with input {"action":"observe"}. Each input is one JSON line.',

@@ -1,6 +1,7 @@
 import { desktopAutomationGuidance, screenshotPresentationGuidance } from './utils/desktop-automation-guidance.js';
 import path from 'path';
 import { handleWindowsDesktop } from './tools/windows-desktop.js';
+import { listWindowsCompanionTools, callWindowsCompanionTool } from './tools/windows-companion.js';
 import { handleTakeScreenshot } from './tools/screenshot.js';
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
@@ -45,6 +46,8 @@ import {
     KillProcessArgsSchema,
     TakeScreenshotArgsSchema,
     WindowsDesktopArgsSchema,
+    WindowsCompanionListArgsSchema,
+    WindowsCompanionCallArgsSchema,
     ReadFileArgsSchema,
     ReadMultipleFilesArgsSchema,
     WriteFileArgsSchema,
@@ -382,6 +385,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 description: "Control the interactive Windows primary screen. Launch an executable by name or path, then observe the screen. Observe before every input and use its window ID and observation_id to detect intervening calls. Observations expire after 60 seconds and are consumed by each action. Use wait_for_window with an exact title for bounded waits. Calls are serialized. For transport retries reuse request_id to avoid duplicate input within this server session. Scroll with amount (positive up). Right-click with right_click. Click with x/y in the returned image pixels. Use text for ordinary text, key for shortcuts, and credential for a saved Windows Generic Credential in a focused password field. Observe after each change to confirm the outcome.",
                 inputSchema: zodToJsonSchema(WindowsDesktopArgsSchema),
                 annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
+            }] : []),
+            ...(process.platform === 'win32' ? [{
+                name: "windows_companion_list_tools",
+                description: "Discover the locally installed Windows Commander MCP read-only inspection tools and their exact JSON input schemas. For a NEW CHAT, use this to learn what local Windows inspection is available. Works without running a separate terminal bridge and automatically reconnects on demand. Does not grant arbitrary execution or filesystem access.",
+                inputSchema: zodToJsonSchema(WindowsCompanionListArgsSchema),
+                annotations: { title: "Discover Windows Companion", readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+            }, {
+                name: "windows_companion_call_tool",
+                description: "Call a permitted read-only tool returned by windows_companion_list_tools (Windows Commander MCP), passing its exact JSON arguments. Useful for app/window inventory, screen metadata, UI tree inspection, process/service inventory and screenshots. Shell execution, file access bypasses and unguarded GUI input are NOT exposed here: use Desktop Commander native guarded tools instead.",
+                inputSchema: zodToJsonSchema(WindowsCompanionCallArgsSchema),
+                annotations: { title: "Call Windows Companion Inspector", readOnlyHint: true, destructiveHint: false, openWorldHint: false },
             }] : []),
             // Filesystem tools
             {
@@ -1385,6 +1399,12 @@ async function handleCallToolRequest(request: CallToolRequest): Promise<ServerRe
                 break;
             case "take_screenshot":
                 result = await handleTakeScreenshot(args ?? {});
+                break;
+            case "windows_companion_list_tools":
+                result = await listWindowsCompanionTools();
+                break;
+            case "windows_companion_call_tool":
+                result = await callWindowsCompanionTool(args);
                 break;
 
             // Filesystem tools

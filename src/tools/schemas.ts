@@ -268,7 +268,15 @@ export const WindowsDesktopArgsSchema = z.object({
   credential: z.string().min(1).max(256).optional().describe('Local Generic Credential name under the DesktopCommander/ prefix (omit the prefix)'),
 }).strict();
 
+export const WindowsCompanionListArgsSchema = z.object({}).strict();
+export const WindowsCompanionCallArgsSchema = z.object({
+  name: z.string().min(1).max(100),
+  arguments: z.record(z.unknown()).optional(),
+}).strict();
+
 export const toolArgSchemas: Record<string, z.ZodTypeAny> = {
+  windows_companion_list_tools: WindowsCompanionListArgsSchema,
+  windows_companion_call_tool: WindowsCompanionCallArgsSchema,
   windows_desktop: WindowsDesktopArgsSchema,
   take_screenshot: TakeScreenshotArgsSchema,
   get_config: GetConfigArgsSchema,
