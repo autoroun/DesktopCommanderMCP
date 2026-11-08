@@ -106,6 +106,12 @@ Optional `request_id` deduplicates identical calls for the lifetime of that serv
 
 Use `wait_for_window` with `title` and optional `timeout_ms` (100–10000 ms) to wait for an exact foreground title and obtain a fresh observation. Use `scroll` with `amount` (-20–20, positive up) or `right_click` with image coordinates.
 
+### Clients exposing terminal tools with a fixed tool list
+
+Start `node C:\Users\uke\DesktopCommanderMCP-Dev\dist\windows-desktop-cli.js` using `start_process` and retain the returned PID. The CLI prints its input schema. Send each action as one JSON line using `interact_with_process` on that same PID. Start with `{"action":"observe"}`. Open the returned `image_path` with `read_file` to actually view the desktop. Each observation writes a uniquely named JPEG to a session folder under the system temporary directory.
+
+For input include the latest `window` and `observation_id`. Observe and read the new image before each subsequent input. On a transport timeout retrieve pending output with `read_process_output`. Reuse `request_id` for an identical input retry. Keep the same session throughout the task. Use `force_terminate` to close it when finished. Temporary screenshots remain on the device until removed.
+
 ## How to install
 
 For ChatGPT, Claude web, and other remote clients, see the [Remote device launchers](scripts/remote/README.md). They install Node.js when missing and run Desktop Commander Remote on macOS, Linux, or Windows.
