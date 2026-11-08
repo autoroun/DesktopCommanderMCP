@@ -100,6 +100,12 @@ For login, add a **Generic Credential** in Windows Credential Manager with an ad
 
 Example: “Open MyApp.exe, show me the login screen, enter my username, use the saved credential demo, sign in, then open Reports and save the report.” The assistant should observe after launch and after each screen transition, use the returned window ID and image coordinates for input, and verify the final state. If an input fails, inspect the screen before retrying because partial input may have reached the app.
 
+Each input consumes the preceding observation. Observe again before the next input. Observations expire after 60 seconds. Input is rejected if the observed window, process, position or display geometry changes. Text entry also stops if focus changes. Desktop calls are serialized within a server process. Run one device server per desktop to avoid competing input streams.
+
+Optional `request_id` deduplicates identical calls for the lifetime of that server process, including failures. Reusing an ID with a different payload is rejected. Up to 256 IDs are retained. At capacity, new IDs are rejected before any action. After restarting the server, inspect the application state before retrying a prior action. A timeout can mean partial execution.
+
+Use `wait_for_window` with `title` and optional `timeout_ms` (100–10000 ms) to wait for an exact foreground title and obtain a fresh observation. Use `scroll` with `amount` (-20–20, positive up) or `right_click` with image coordinates.
+
 ## How to install
 
 For ChatGPT, Claude web, and other remote clients, see the [Remote device launchers](scripts/remote/README.md). They install Node.js when missing and run Desktop Commander Remote on macOS, Linux, or Windows.

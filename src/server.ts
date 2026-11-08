@@ -376,7 +376,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             ...(process.platform === 'win32' ? [{
                 name: "windows_desktop",
-                description: "Control the interactive Windows primary screen. Launch an executable by name or path, then observe the screen. For each input use the window ID from observe. Click with x/y in the returned image pixels. Use text for ordinary text, key for shortcuts, and credential for a saved Windows Generic Credential in a focused password field. Observe after each change to confirm the outcome.",
+                description: "Control the interactive Windows primary screen. Launch an executable by name or path, then observe the screen. Observe before every input and use its window ID. Observations expire after 60 seconds and are consumed by each action. Use wait_for_window with an exact title for bounded waits. Calls are serialized. For transport retries reuse request_id to avoid duplicate input within this server session. Scroll with amount (positive up). Right-click with right_click. Click with x/y in the returned image pixels. Use text for ordinary text, key for shortcuts, and credential for a saved Windows Generic Credential in a focused password field. Observe after each change to confirm the outcome.",
                 inputSchema: zodToJsonSchema(WindowsDesktopArgsSchema),
                 annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
             }] : []),

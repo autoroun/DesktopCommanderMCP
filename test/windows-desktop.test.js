@@ -20,3 +20,18 @@ test('desktop observe returns window metadata and a JPEG image', {
     assert.equal(content[1].type, 'image');
     assert.equal(content[1].mimeType, 'image/jpeg');
 });
+
+test('input requires a recent observation before any desktop effects', {
+    skip: process.platform !== 'win32',
+}, async () => {
+    await assert.rejects(handleWindowsDesktop({action: 'text', window: 1, text: 'never sent'}), /Observe/);
+});
+
+test('request IDs retain failures and reject changed payloads', {
+    skip: process.platform !== 'win32',
+}, async () => {
+    const args = {action: 'key', window: 1, key: 'Enter', request_id: 'regression-no-double-input'};
+    await assert.rejects(handleWindowsDesktop(args), /Observe/);
+    await assert.rejects(handleWindowsDesktop(args), /Observe/);
+    await assert.rejects(handleWindowsDesktop({...args, key: 'Tab'}), /different arguments/);
+});

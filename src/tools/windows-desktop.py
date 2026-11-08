@@ -6,6 +6,8 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
+import win32process
 
 try:
     import win32api
@@ -29,16 +31,24 @@ def geometry():
     return width, height, max(1, round(width * scale)), max(1, round(height * scale))
 
 
+def desktop_context(window):
+    return dict(window=window, pid=win32process.GetWindowThreadProcessId(window)[1],
+                rect=list(win32gui.GetWindowRect(window)), geometry=list(geometry()))
+
+
 def observe():
     window = win32gui.GetForegroundWindow()
     width, height, image_width, image_height = geometry()
+    context = desktop_context(window)
     image = ImageGrab.grab()
     if image.size != (width, height):
         raise ValueError("Display changed during capture. Try observing again.")
     stream = io.BytesIO()
     image.resize((image_width, image_height)).convert("RGB").save(stream, "JPEG", quality=78)
     require_window(window)
-    return json.dumps(dict(window=window, title=win32gui.GetWindowText(window),
+    if context != desktop_context(window):
+        raise ValueError("Window or display changed during capture. Observe again.")
+    return json.dumps(dict(context=context, window=window, title=win32gui.GetWindowText(window),
                            width=image_width, height=image_height,
                            image=base64.b64encode(stream.getvalue()).decode("ascii")))
 
@@ -50,11 +60,21 @@ def password_field():
     return tuple(field.GetRuntimeId())
 
 
+def focused_field():
+    field = IUIA().iuia.GetFocusedElement()
+    if not field:
+        raise ValueError("No focused text field.")
+    return tuple(field.GetRuntimeId())
+
+
 def type_literal(value, window, field=None):
     # Send literal UTF-16 units, including surrogate pairs, without using the clipboard.
+    original_field = focused_field()
     encoded = value.encode("utf-16-le")
     for i in range(0, len(encoded), 2):
         require_window(window)
+        if focused_field() != original_field:
+            raise ValueError("Input focus changed during typing. Observe before retrying.")
         if field is not None and field != password_field():
             raise ValueError("Password field changed during entry.")
         keyboard.KeyAction(chr(int.from_bytes(encoded[i:i + 2], "little"))).run()
@@ -71,6 +91,13 @@ def perform(args):
     action = args["action"]
     if action == "observe":
         return observe()
+    if action == "wait_for_window":
+        deadline = time.monotonic() + args.get("timeout_ms", 5000) / 1000
+        while time.monotonic() < deadline:
+            if win32gui.GetWindowText(win32gui.GetForegroundWindow()) == args["title"]:
+                return observe()
+            time.sleep(0.1)
+        raise ValueError("Timed out waiting for the requested foreground window. Observe before continuing.")
     if action == "launch":
         app = args["app"]
         if Path(app).suffix.lower() != ".exe":
@@ -80,14 +107,21 @@ def perform(args):
 
     window = args["window"]
     require_window(window)
-    if action in ("click", "double_click"):
+    if args.get("context") != desktop_context(window):
+        raise ValueError("Window position, process or display changed. Observe again.")
+    if action in ("click", "double_click", "right_click"):
         width, height, iw, ih = geometry()
         x, y = args["x"], args["y"]
         if not (0 <= x < iw and 0 <= y < ih):
             raise ValueError("Coordinates outside the observed image.")
         coords = (round(x * (width - 1) / max(1, iw - 1)), round(y * (height - 1) / max(1, ih - 1)))
-        click = mouse.click if action == "click" else mouse.double_click
-        click(coords=coords)
+        require_window(window)
+        if action == "double_click":
+            mouse.double_click(coords=coords)
+        else:
+            mouse.click(button="right" if action == "right_click" else "left", coords=coords)
+    elif action == "scroll":
+        mouse.scroll(wheel_dist=args["amount"])
     elif action == "key":
         keyboard.send_keys(KEYS[args["key"]], turn_off_numlock=False)
     elif action == "text":
