@@ -3,6 +3,7 @@ import path from 'path';
 import { handleWindowsDesktop } from './tools/windows-desktop.js';
 import { listWindowsCompanionTools, callWindowsCompanionTool } from './tools/windows-companion.js';
 import { handleTakeScreenshot } from './tools/screenshot.js';
+import { handleShareScreenshot } from './tools/screenshot-share.js';
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
     CallToolRequestSchema,
@@ -45,6 +46,7 @@ import {
     ListSessionsArgsSchema,
     KillProcessArgsSchema,
     TakeScreenshotArgsSchema,
+    ShareScreenshotArgsSchema,
     WindowsDesktopArgsSchema,
     WindowsCompanionListArgsSchema,
     WindowsCompanionCallArgsSchema,
@@ -380,6 +382,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 description: "Capture the current Windows desktop and return the actual image directly in this chat. Use for requests like 'PC'den SS at', 'ekran goruntusu gonder', or 'show my screen'. Never respond with just a local file path. Requires an interactive desktop and Python Pillow.",
                 inputSchema: zodToJsonSchema(TakeScreenshotArgsSchema),
             },
+            ...(process.platform === 'win32' ? [{
+                name: "share_screenshot",
+                description: "Capture the Windows desktop and return a SHORT-LIVED, externally verified HTTPS URL for delivery in chat. Use this if direct MCP image blocks do not show up in the chat. The screenshot is served ONLY from a random 256-bit path over a temporary Cloudflare Quick Tunnel, expires within 1–15 minutes, and never exposes filesystem, shell, or arbitrary endpoints. Only claim delivery after the response status says verified; give user the clickable URL and expiry time. User must have requested a screenshot or agreed to external transport. Cloudflared must be installed.",
+                inputSchema: zodToJsonSchema(ShareScreenshotArgsSchema),
+                annotations: { title: "Share Screenshot Link", readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+            }] : []),
             ...(process.platform === 'win32' ? [{
                 name: "windows_desktop",
                 description: "Control the interactive Windows primary screen. Launch an executable by name or path, then observe the screen. Observe before every input and use its window ID and observation_id to detect intervening calls. Observations expire after 60 seconds and are consumed by each action. Use wait_for_window with an exact title for bounded waits. Calls are serialized. For transport retries reuse request_id to avoid duplicate input within this server session. Scroll with amount (positive up). Right-click with right_click. Click with x/y in the returned image pixels. Use text for ordinary text, key for shortcuts, and credential for a saved Windows Generic Credential in a focused password field. Observe after each change to confirm the outcome.",
@@ -1399,6 +1407,9 @@ async function handleCallToolRequest(request: CallToolRequest): Promise<ServerRe
                 break;
             case "take_screenshot":
                 result = await handleTakeScreenshot(args ?? {});
+                break;
+            case "share_screenshot":
+                result = await handleShareScreenshot(args ?? {});
                 break;
             case "windows_companion_list_tools":
                 result = await listWindowsCompanionTools();

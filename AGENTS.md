@@ -8,4 +8,6 @@ Windows Commander MCP is an optional inspection companion installed at `%LOCALAP
 
 Respect allowed directories, blocked commands, confirmations, user authorization, password privacy and desktop observation freshness. Never use a generic companion tool to bypass any access boundary.
 
+For screenshot delivery requests, prefer the verified `share_screenshot` link unless this exact MCP client is proven to render inline images. If inline image presentation is not confirmed, use `share_screenshot` (or fallback CLI `node dist/screenshot-share-cli.js --minutes=10` via `start_process`) to create a verified short-lived HTTPS link and put it in the chat. The link is served from an isolated screenshot-only Cloudflare Quick Tunnel and expires; never pretend an image was attached just because it was read by the agent. If verification fails, say delivery failed.
+
 For architecture and validation see [docs/windows-companion-mcp.md](docs/windows-companion-mcp.md). To change the fork, update TypeScript in `src`, tests in `test`, compile with `npm run build`, verify, and only then push to GitHub. Running devices need a controlled service restart to advertise new tool capabilities.

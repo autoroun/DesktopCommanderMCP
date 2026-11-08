@@ -252,6 +252,11 @@ export const TakeScreenshotArgsSchema = z.object({
   max_width: z.number().int().min(320).max(3840).optional(),
 });
 
+export const ShareScreenshotArgsSchema = z.object({
+  max_width: z.number().int().min(320).max(3840).optional(),
+  ttl_minutes: z.number().int().min(1).max(15).optional(),
+}).strict();
+
 export const WindowsDesktopArgsSchema = z.object({
   action: z.enum(['launch', 'observe', 'click', 'double_click', 'text', 'key', 'credential', 'right_click', 'scroll', 'wait_for_window']),
   observation_id: z.string().uuid().optional().describe('ID returned by observe. Include with input to reject observations superseded by another caller.'),
@@ -279,6 +284,7 @@ export const toolArgSchemas: Record<string, z.ZodTypeAny> = {
   windows_companion_call_tool: WindowsCompanionCallArgsSchema,
   windows_desktop: WindowsDesktopArgsSchema,
   take_screenshot: TakeScreenshotArgsSchema,
+  share_screenshot: ShareScreenshotArgsSchema,
   get_config: GetConfigArgsSchema,
   set_config_value: SetConfigValueArgsSchema,
   read_file: ReadFileArgsSchema,
