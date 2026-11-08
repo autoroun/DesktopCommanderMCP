@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { WindowsDesktopArgsSchema } from './schemas.js';
@@ -25,15 +25,16 @@ function runHelper(command: string, prefix: string[], input: string): Promise<st
 }
 
 let pending: Promise<unknown> = Promise.resolve();
-let observation: { window: number; capturedAt: number; context: unknown } | undefined;
+let observation: { id: string; window: number; capturedAt: number; context: unknown } | undefined;
 const recentRequests = new Map<string, { hash: string; result: Promise<any> }>();
 
 /** Serialize requests because mouse and keyboard are shared by every caller. */
 export async function handleWindowsDesktop(input: unknown): Promise<any> {
     const args = WindowsDesktopArgsSchema.parse(input);
     const hash = createHash('sha256').update(JSON.stringify(args)).digest('hex');
-    if (args.request_id) {
-        const previous = recentRequests.get(args.request_id);
+    const cacheRequest = args.request_id && !['observe', 'wait_for_window'].includes(args.action);
+    if (cacheRequest) {
+        const previous = recentRequests.get(args.request_id!);
         if (previous) {
             if (previous.hash !== hash) return Promise.reject(new Error('request_id was already used with different arguments.'));
             return previous.result;
@@ -44,7 +45,7 @@ export async function handleWindowsDesktop(input: unknown): Promise<any> {
     }
     const result = pending.then(() => executeDesktop(args));
     pending = result.catch(() => undefined);
-    if (args.request_id) recentRequests.set(args.request_id, { hash, result });
+    if (cacheRequest) recentRequests.set(args.request_id!, { hash, result });
     return result;
 }
 
@@ -66,6 +67,9 @@ async function executeDesktop(input: unknown) {
         if (!observation || observation.window !== args.window || Date.now() - observation.capturedAt > 60000) {
             throw new Error('Observe the target window again before sending input (observations expire after 60 seconds).');
         }
+        if (args.observation_id && args.observation_id !== observation.id) {
+            throw new Error('Observation was superseded by another caller. Observe again before sending input.');
+        }
         context = observation.context;
     }
     // A failed input may have partially reached the application. Require a fresh observation.
@@ -76,13 +80,15 @@ async function executeDesktop(input: unknown) {
             output = await runHelper(command, [...prefix], JSON.stringify({ ...args, context }));
         } catch (error) {
             // Retry only before the helper could have performed an action.
-            if (['ENOENT', 81, 90, 9009].includes((error as NodeJS.ErrnoException).code!)) continue;
+            if (['ENOENT', 81].includes((error as NodeJS.ErrnoException).code!)) continue;
             throw error;
         }
         if (['observe', 'wait_for_window'].includes(args.action)) {
             const { image, context: capturedContext, ...info } = JSON.parse(output);
-            observation = { window: info.window, capturedAt: Date.now(), context: capturedContext };
             validateScreenshotImage(image);
+            const id = randomUUID();
+            info.observation_id = id;
+            observation = { id, window: info.window, capturedAt: Date.now(), context: capturedContext };
             return { content: [
                 { type: 'text' as const, text: JSON.stringify(info) },
                 { type: 'image' as const, mimeType: 'image/jpeg', data: image },

@@ -35,3 +35,15 @@ test('request IDs retain failures and reject changed payloads', {
     await assert.rejects(handleWindowsDesktop(args), /Observe/);
     await assert.rejects(handleWindowsDesktop({...args, key: 'Tab'}), /different arguments/);
 });
+
+test('observations stay fresh with repeated request IDs and superseded input is rejected', {
+    skip: process.platform !== 'win32' || process.env.DC_INTERACTIVE_TEST !== '1',
+}, async () => {
+    const args = {action: 'observe', request_id: 'fresh-screen'};
+    const first = JSON.parse((await handleWindowsDesktop(args)).content[0].text);
+    const second = JSON.parse((await handleWindowsDesktop(args)).content[0].text);
+    assert.notEqual(first.observation_id, second.observation_id);
+    await assert.rejects(handleWindowsDesktop({
+        action: 'key', key: 'Enter', window: second.window, observation_id: first.observation_id,
+    }), /superseded/);
+});

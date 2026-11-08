@@ -254,6 +254,7 @@ export const TakeScreenshotArgsSchema = z.object({
 
 export const WindowsDesktopArgsSchema = z.object({
   action: z.enum(['launch', 'observe', 'click', 'double_click', 'text', 'key', 'credential', 'right_click', 'scroll', 'wait_for_window']),
+  observation_id: z.string().uuid().optional().describe('ID returned by observe. Include with input to reject observations superseded by another caller.'),
   request_id: z.string().min(1).max(128).optional().describe('Reuse an ID only to retry the identical request. The server returns the original outcome without repeating input. IDs persist until server restart (256 maximum).'),
   title: z.string().min(1).max(512).optional().describe('Exact foreground window title to wait for'),
   timeout_ms: z.number().int().min(100).max(10000).optional(),

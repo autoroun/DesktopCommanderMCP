@@ -7,9 +7,9 @@ import os
 from pathlib import Path
 import sys
 import time
-import win32process
 
 try:
+    import win32process
     import win32api
     import win32cred
     import win32gui
@@ -121,7 +121,19 @@ def perform(args):
         else:
             mouse.click(button="right" if action == "right_click" else "left", coords=coords)
     elif action == "scroll":
-        mouse.scroll(wheel_dist=args["amount"])
+        # Wheel input goes to the window under the pointer on modern Windows.
+        # Move it into the observed foreground window first.
+        left, top, right, bottom = win32gui.GetWindowRect(window)
+        width, height, _, _ = geometry()
+        left, top, right, bottom = max(0, left), max(0, top), min(width, right), min(height, bottom)
+        if right <= left or bottom <= top:
+            raise ValueError("Target window is outside the primary screen.")
+        coords = ((left + right) // 2, (top + bottom) // 2)
+        target = win32gui.WindowFromPoint(coords)
+        if win32gui.GetAncestor(target, 2) != window:
+            raise ValueError("Another window covers the scroll target. Observe again.")
+        require_window(window)
+        mouse.scroll(coords=coords, wheel_dist=args["amount"])
     elif action == "key":
         keyboard.send_keys(KEYS[args["key"]], turn_off_numlock=False)
     elif action == "text":
