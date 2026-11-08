@@ -1,4 +1,5 @@
 import path from 'path';
+import { handleWindowsDesktop } from './tools/windows-desktop.js';
 import { handleTakeScreenshot } from './tools/screenshot.js';
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
@@ -40,6 +41,7 @@ import {
     ListSessionsArgsSchema,
     KillProcessArgsSchema,
     TakeScreenshotArgsSchema,
+    WindowsDesktopArgsSchema,
     ReadFileArgsSchema,
     ReadMultipleFilesArgsSchema,
     WriteFileArgsSchema,
@@ -372,6 +374,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 description: "Capture the current Windows desktop and return the actual image directly in this chat. Use for requests like 'PC'den SS at', 'ekran goruntusu gonder', or 'show my screen'. Never respond with just a local file path. Requires an interactive desktop and Python Pillow.",
                 inputSchema: zodToJsonSchema(TakeScreenshotArgsSchema),
             },
+            ...(process.platform === 'win32' ? [{
+                name: "windows_desktop",
+                description: "Control the interactive Windows primary screen. Launch an executable by name or path, then observe the screen. For each input use the window ID from observe. Click with x/y in the returned image pixels. Use text for ordinary text, key for shortcuts, and credential for a saved Windows Generic Credential in a focused password field. Observe after each change to confirm the outcome.",
+                inputSchema: zodToJsonSchema(WindowsDesktopArgsSchema),
+                annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
+            }] : []),
             // Filesystem tools
             {
                 name: "read_file",
@@ -1258,7 +1266,7 @@ async function handleCallToolRequest(request: CallToolRequest): Promise<ServerRe
 
 
         // Track tool call
-        trackToolCall(name, args);
+        trackToolCall(name, name === 'windows_desktop' ? undefined : args);
 
         // Using a more structured approach with dedicated handlers
         // (result is declared above so the finally block can read execution status)
@@ -1369,6 +1377,9 @@ async function handleCallToolRequest(request: CallToolRequest): Promise<ServerRe
             // Note: REPL functionality removed in favor of using general terminal commands
 
             // Screenshot: return an image content block to the MCP client.
+            case "windows_desktop":
+                result = await handleWindowsDesktop(args);
+                break;
             case "take_screenshot":
                 result = await handleTakeScreenshot(args ?? {});
                 break;
@@ -1447,6 +1458,7 @@ async function handleCallToolRequest(request: CallToolRequest): Promise<ServerRe
         isError = !!result.isError;
         const EXCLUDED_TOOLS = [
             'get_recent_tool_calls',
+            'windows_desktop',
             'track_ui_event'
         ];
 

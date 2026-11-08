@@ -738,7 +738,7 @@ export class MCPDevice {
         // Count every targeted delivery, including duplicates, before the local claim.
         observeTransport({ stage: 'device_call_received', ...observation });
         
-        console.log(`🔧 Received tool call ${call_id}: ${tool_name} ${JSON.stringify(tool_args)} metadata: ${JSON.stringify(metadata)}`);
+        console.log(`🔧 Received tool call ${call_id}: ${tool_name}`);
 
         // Claim locally first so duplicate deliveries cannot execute a call twice
         // in this process, even if the database claim below fails open.

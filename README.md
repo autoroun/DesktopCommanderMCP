@@ -80,6 +80,26 @@ Execute long-running terminal commands on your computer and manage processes thr
   - Command blocklist for accidental execution
   - [Docker isolation](#option-6-docker-installation--auto-updates-no-nodejs-required) for complete isolation
 
+## Windows visual desktop control (this fork)
+
+On an unlocked Windows desktop, the `windows_desktop` MCP tool can launch an executable, show the primary display, click or double-click, type Unicode text, send keyboard shortcuts, and fill a protected password field using a named local Windows Generic Credential.
+
+Run this fork from a terminal in your interactive Windows session with Git, Node.js 22.12+ and Python 3 installed:
+
+```powershell
+git clone https://github.com/autoroun/DesktopCommanderMCP.git
+cd DesktopCommanderMCP
+python -m pip install Pillow pywin32 pywinauto
+npm.cmd ci
+node dist/index.js remote
+```
+
+Pair the device and refresh the tool list in the MCP client. Look for `windows_desktop`. The client or remote gateway must expose the device's tools and forward MCP image content. For a client with local stdio support, configure `node` with the absolute path to this checkout's `dist/index.js` instead of the remote command. The upstream npm installer runs the upstream release.
+
+For login, add a **Generic Credential** in Windows Credential Manager with an address such as `DesktopCommander/demo` and the application's password. Enter the username as ordinary text. Ask the assistant to use credential `demo` after focusing the password field. The helper reads the password locally and types it only while that window and a Windows UI Automation password field retain focus. The credential action does not press Enter. MFA, secure desktop prompts and password fields that do not expose their protected state may require user input.
+
+Example: “Open MyApp.exe, show me the login screen, enter my username, use the saved credential demo, sign in, then open Reports and save the report.” The assistant should observe after launch and after each screen transition, use the returned window ID and image coordinates for input, and verify the final state. If an input fails, inspect the screen before retrying because partial input may have reached the app.
+
 ## How to install
 
 For ChatGPT, Claude web, and other remote clients, see the [Remote device launchers](scripts/remote/README.md). They install Node.js when missing and run Desktop Commander Remote on macOS, Linux, or Windows.

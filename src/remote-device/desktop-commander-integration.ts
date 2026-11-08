@@ -302,7 +302,7 @@ export class DesktopCommanderIntegration {
 
         // Proxy other tools to MCP server
         try {
-            console.debug('[DEBUG] Calling MCP tool:', toolName, 'args:', JSON.stringify(args).substring(0, 100));
+            console.debug('[DEBUG] Calling MCP tool:', toolName);
             const result = await this.mcpClient!.callTool({
                 name: toolName,
                 arguments: args,

@@ -252,7 +252,19 @@ export const TakeScreenshotArgsSchema = z.object({
   max_width: z.number().int().min(320).max(3840).optional(),
 });
 
+export const WindowsDesktopArgsSchema = z.object({
+  action: z.enum(['launch', 'observe', 'click', 'double_click', 'text', 'key', 'credential']),
+  app: z.string().min(1).optional().describe('Executable name or path for launch'),
+  window: z.number().int().positive().optional().describe('Foreground window ID from observe'),
+  x: z.number().int().nonnegative().optional(),
+  y: z.number().int().nonnegative().optional(),
+  text: z.string().min(1).max(8192).optional().describe('Ordinary text only. For passwords use credential.'),
+  key: z.enum(['Enter', 'Tab', 'Shift+Tab', 'Escape', 'Backspace', 'Delete', 'Up', 'Down', 'Left', 'Right', 'Ctrl+A', 'Ctrl+C', 'Ctrl+V', 'Ctrl+S', 'Alt+F4']).optional(),
+  credential: z.string().min(1).max(256).optional().describe('Local Generic Credential name under the DesktopCommander/ prefix (omit the prefix)'),
+}).strict();
+
 export const toolArgSchemas: Record<string, z.ZodTypeAny> = {
+  windows_desktop: WindowsDesktopArgsSchema,
   take_screenshot: TakeScreenshotArgsSchema,
   get_config: GetConfigArgsSchema,
   set_config_value: SetConfigValueArgsSchema,
