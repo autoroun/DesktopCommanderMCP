@@ -1,6 +1,5 @@
 # Desktop Commander Ultra: reuse the already-existing hidden Windows logon task.
 # Run from the fork checkout after npm run build.
-param([switch]$EnableProfile = $true)
 $ErrorActionPreference = 'Stop'
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $Entry = Join-Path $Root 'dist\index.js'
@@ -63,10 +62,9 @@ if (-not (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue)) 
   $Settings = New-ScheduledTaskSettingsSet -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew
   Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Settings $Settings -Description 'Desktop Commander Ultra fork remote agent' | Out-Null
 }
-if ($EnableProfile) {
-  & $Node $Cli enable
-  if ($LASTEXITCODE -ne 0) { throw 'Could not activate Ultra trusted profile.' }
-}
+# Migrate new single-mode configuration before the remote agent starts.
+& $Node $Cli
+if ($LASTEXITCODE -ne 0) { throw 'Could not initialize the Ultra Full Access profile.' }
 Write-Output ('Installed. Startup task: ' + $TaskName)
 Write-Output ('Fork entry: ' + $Entry)
 Write-Output ('Previous launcher backup: ' + $Backup)

@@ -98,6 +98,9 @@ export async function setConfigValue(args: unknown) {
       };
     }
 
+    if (parsed.data.key === 'blockedCommands' || parsed.data.key === 'allowedDirectories') {
+      return { content: [{ type: 'text', text: 'Full Access is fixed in this fork; these fields cannot be changed.' }], isError: true };
+    }
     if (!isConfigFieldKey(parsed.data.key)) {
       return {
         content: [{
@@ -125,7 +128,7 @@ export async function setConfigValue(args: unknown) {
       }
 
       // Special handling for known array configuration keys
-      if (fieldDefinition.valueType === 'array' && !Array.isArray(valueToStore)) {
+      if ((fieldDefinition.valueType as string) === 'array' && !Array.isArray(valueToStore)) {
         if (typeof valueToStore === 'string') {
           const originalString = valueToStore;
           try {

@@ -1188,21 +1188,31 @@ For complete details, see our [Privacy Policy](PRIVACY.md).
 MIT
 
 
-## Desktop Commander Ultra (this fork)
+## Desktop Commander Ultra — always-on Full Access (owner fork)
 
-Ultra is an **owner-enabled mode** with zero repeated *internal* permission prompts for routine tasks.
-It does **not** disable ChatGPT/Claude tool approval prompts, account/device authentication,
-Windows UAC, or Windows system permissions.
+This fork has a **single full-access mode**. It does not show enable/disable buttons
+or ask for internal command/folder authorization. Default blockedCommands and
+allowedDirectories are both empty arrays. Existing configuration is migrated
+on startup. These internal changes do **not** disable ChatGPT/Claude tool approvals,
+device authentication, Windows UAC, or operating-system access control.
 
-- Use the MCP tool ultra_control with action=enable once on an authorized device to clear the internal command blocklist and folder limits. action=disable restores the previous lists.
-- action=task_start, commands=[...], cwd=... executes a sequence as a cancellable background job. task_status and task_cancel manage it. Output is bounded, and a local audit file is retained.
-- action=project_scan, cwd=... lists a workspace, package scripts and Git status.
-- action=power, operation=shutdown|restart|abort controls Windows power with a 30-second shutdown/restart delay.
-- action=dashboard_start starts the local-only panel at http://127.0.0.1:8765 with job controls, profile controls, and emergency cancellation.
-- scripts/ultra/install-autostart.ps1 installs a hidden, self-restarting **current-user logon task** that runs this checkout rather than the upstream npm release. It does not grant administrative privileges; sign-in is required for interactive screen automation.
+- ultra_control action=status: device, current jobs, FULL_ACCESS.
+- ultra_control action=task_start: execute 1-25 ordered shell commands in a background job,
+  with retries, status, cancellation and local event audit. All tasks run with the
+  **existing Windows user permissions**, not automatically elevated permissions.
+- ultra_control action=project_scan cwd=...: folder, package scripts and Git status.
+- ultra_control action=power operation=shutdown|restart|abort: Windows power controls
+  (30-second delay for shutdown/restart).
+- ultra_control action=dashboard_start: localhost-only control panel at
+  http://127.0.0.1:8765 — task history, emergency cancellation, device status.
+- scripts/ultra/install-autostart.ps1 updates the current-user hidden logon task
+  to start **this checkout** instead of the upstream npm package. The original
+  launcher is backed up. The change becomes effective at the next Windows logon.
 
-Build using npm ci and npm run build. Start manually for testing using
-DC_ULTRA_DASHBOARD=1 and node dist/index.js remote from this checkout.
-Do not run the upstream remote client and the fork remote client simultaneously for the same device.
-This repository remains the owner's fork and should not be connected to untrusted MCP clients
-because trusted mode grants wide access to local files and commands.
+Build with npm ci then npm run build; validate with
+node scripts/ultra/smoke.mjs. Run node dist/index.js remote from this checkout
+or use the installed logon task. Do not start two device agents simultaneously.
+
+**Security**: Full Access gives connected authorized clients wide file and
+command access. Keep remote-device pairing and OS security intact, secure
+the chat account, and maintain local backups and task audit logs.

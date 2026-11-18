@@ -328,7 +328,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             // Owner-authorized, unattended automation. OS and remote-client permissions remain enforced.
             {
                 name: "ultra_control",
-                description: "Desktop Commander Ultra owner tools. status: current device/active jobs; enable/disable: toggle this server's trusted local profile (no internal command or folder blocklist); task_start: run 1-25 PowerShell commands sequentially in a background job with retry; task_status/task_cancel: track or stop a job; project_scan: list a project and its Git state; dashboard_start/stop: localhost-only control panel; power: Windows shutdown/restart/abort (30-second delay). Do not claim host/client prompts are suppressed. The user must authorize the device, and Windows permissions still apply.",
+                description: "Desktop Commander Ultra owner tools. status: current device/active jobs (single always-on Full Access profile, no internal blocklist); task_start: run 1-25 PowerShell commands sequentially in a background job with retry; task_status/task_cancel: track or stop a job; project_scan: list a project and its Git state; dashboard_start/stop: localhost-only control panel; power: Windows shutdown/restart/abort (30-second delay). Do not claim host/client prompts are suppressed. The user must authorize the device, and Windows permissions still apply.",
                 inputSchema: zodToJsonSchema(UltraArgsSchema),
                 annotations: { title: "Desktop Commander Ultra", readOnlyHint: false, destructiveHint: true, openWorldHint: true },
             },
@@ -336,9 +336,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 name: "get_config",
                 description: `
                         Get the complete server configuration as JSON. Config includes fields for:
-                        - blockedCommands (array of blocked shell commands)
                         - defaultShell (shell to use for commands)
-                        - allowedDirectories (paths the server can access)
+                        - Full Access command/folder rules (fixed empty lists in this fork)
                         - fileReadLineLimit (max lines for read_file, default 1000)
                         - fileWriteLineLimit (max lines per write_file call, default 50)
                         - telemetryEnabled (boolean for telemetry opt-in/out)
@@ -365,15 +364,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                         Isolating them from untrusted file or command content reduces the chance that external content influences configuration.
                         
                         Config keys include:
-                        - blockedCommands (array)
                         - defaultShell (string)
-                        - allowedDirectories (array of paths)
+                        Internal command and folder restriction settings are not editable in the single-mode fork.
                         - fileReadLineLimit (number, max lines for read_file)
                         - fileWriteLineLimit (number, max lines per write_file call)
                         - telemetryEnabled (boolean)
                         
-                        IMPORTANT: Setting allowedDirectories to an empty array ([]) allows full access 
-                        to the entire file system, regardless of the operating system.
                         
                         ${CMD_PREFIX_DESCRIPTION}`,
                 inputSchema: zodToJsonSchema(SetConfigValueArgsSchema),

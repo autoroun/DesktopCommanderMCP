@@ -203,6 +203,29 @@ class ConfigManager {
           `Desktop Commander uses the settings it read; changes to them can't be saved until config.json is writable.`);
       }
     }
+    if (config.blockedCommands?.length || config.allowedDirectories?.length ||
+        config.ultraTrustedMode !== undefined || config.pendingWelcomeOnboarding === true) {
+      try {
+        config = await this.performConfigMutation((latest) => {
+          latest.blockedCommands = [];
+          latest.allowedDirectories = [];
+          delete latest.ultraTrustedMode;
+          latest.pendingWelcomeOnboarding = false;
+          latest.welcomeOnboardingEligible = false;
+          // Old alternate-mode settings are obsolete in this fork.
+          delete latest.ultraPreviousBlockedCommands;
+          delete latest.ultraPreviousAllowedDirectories;
+        });
+      } catch (error) {
+        // Continue in full access in memory even if persistence is temporarily unavailable.
+        config.blockedCommands = [];
+        config.allowedDirectories = [];
+        delete config.ultraTrustedMode;
+        config.pendingWelcomeOnboarding = false;
+        config.welcomeOnboardingEligible = false;
+        warnUser('Could not persist full-access profile: ' + messageOf(error));
+      }
+    }
     return config;
   }
 
@@ -230,58 +253,15 @@ class ConfigManager {
    */
   private getDefaultConfig(): ServerConfig {
     return {
-      blockedCommands: [
-
-        // Disk and partition management
-        "mkfs",      // Create a filesystem on a device
-        "format",    // Format a storage device (cross-platform)
-        "mount",     // Mount a filesystem
-        "umount",    // Unmount a filesystem
-        "fdisk",     // Manipulate disk partition tables
-        "dd",        // Convert and copy files, can write directly to disks
-        "parted",    // Disk partition manipulator
-        "diskpart",  // Windows disk partitioning utility
-        
-        // System administration and user management
-        "sudo",      // Execute command as superuser
-        "su",        // Substitute user identity
-        "passwd",    // Change user password
-        "adduser",   // Add a user to the system
-        "useradd",   // Create a new user
-        "usermod",   // Modify user account
-        "groupadd",  // Create a new group
-        "chsh",      // Change login shell
-        "visudo",    // Edit the sudoers file
-        
-        // System control
-        "shutdown",  // Shutdown the system
-        "reboot",    // Restart the system
-        "halt",      // Stop the system
-        "poweroff",  // Power off the system
-        "init",      // Change system runlevel
-        
-        // Network and security
-        "iptables",  // Linux firewall administration
-        "firewall",  // Generic firewall command
-        "netsh",     // Windows network configuration
-        
-        // Windows system commands
-        "sfc",       // System File Checker
-        "bcdedit",   // Boot Configuration Data editor
-        "reg",       // Windows registry editor
-        "net",       // Network/user/service management
-        "sc",        // Service Control manager
-        "runas",     // Execute command as another user
-        "cipher",    // Encrypt/decrypt files or wipe data
-        "takeown"    // Take ownership of files
-      ],
+      // This owner's fork has a single Full Access profile. No built-in blocklist.
+      blockedCommands: [],
       defaultShell: getDefaultShell(),
       allowedDirectories: [],
-      telemetryEnabled: true, // Default to opt-out approach (telemetry on by default)
+      telemetryEnabled: false, // Local-only preference: no anonymous usage telemetry
       fileWriteLineLimit: 50,  // Default line limit for file write operations (changed from 100)
       fileReadLineLimit: 1000,  // Default line limit for file read operations (changed from character-based)
-      pendingWelcomeOnboarding: true, // New install flag - triggers A/B test for welcome page
-      welcomeOnboardingEligible: true // Distinguishes new installs from migrated legacy configs
+      pendingWelcomeOnboarding: false, // Headless, unattended operation
+      welcomeOnboardingEligible: false // No first-run modal for this dedicated fork
     };
   }
 
@@ -538,7 +518,7 @@ class ConfigManager {
    */
   async getConfig(): Promise<ServerConfig> {
     await this.init();
-    return { ...this.config };
+    return { ...this.config, blockedCommands: [], allowedDirectories: [], pendingWelcomeOnboarding: false, welcomeOnboardingEligible: false };
   }
 
   /**
@@ -546,6 +526,8 @@ class ConfigManager {
    */
   async getValue(key: string): Promise<any> {
     await this.init();
+    if (key === 'blockedCommands' || key === 'allowedDirectories') return [];
+    if (key === 'pendingWelcomeOnboarding' || key === 'welcomeOnboardingEligible') return false;
     return this.config[key];
   }
 
