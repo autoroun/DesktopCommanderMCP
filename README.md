@@ -1186,3 +1186,23 @@ For complete details, see our [Privacy Policy](PRIVACY.md).
 ## License
 
 MIT
+
+
+## Desktop Commander Ultra (this fork)
+
+Ultra is an **owner-enabled mode** with zero repeated *internal* permission prompts for routine tasks.
+It does **not** disable ChatGPT/Claude tool approval prompts, account/device authentication,
+Windows UAC, or Windows system permissions.
+
+- Use the MCP tool ultra_control with action=enable once on an authorized device to clear the internal command blocklist and folder limits. action=disable restores the previous lists.
+- action=task_start, commands=[...], cwd=... executes a sequence as a cancellable background job. task_status and task_cancel manage it. Output is bounded, and a local audit file is retained.
+- action=project_scan, cwd=... lists a workspace, package scripts and Git status.
+- action=power, operation=shutdown|restart|abort controls Windows power with a 30-second shutdown/restart delay.
+- action=dashboard_start starts the local-only panel at http://127.0.0.1:8765 with job controls, profile controls, and emergency cancellation.
+- scripts/ultra/install-autostart.ps1 installs a hidden, self-restarting **current-user logon task** that runs this checkout rather than the upstream npm release. It does not grant administrative privileges; sign-in is required for interactive screen automation.
+
+Build using npm ci and npm run build. Start manually for testing using
+DC_ULTRA_DASHBOARD=1 and node dist/index.js remote from this checkout.
+Do not run the upstream remote client and the fork remote client simultaneously for the same device.
+This repository remains the owner's fork and should not be connected to untrusted MCP clients
+because trusted mode grants wide access to local files and commands.

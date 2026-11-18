@@ -1,5 +1,7 @@
 import { desktopAutomationGuidance, screenshotPresentationGuidance } from './utils/desktop-automation-guidance.js';
 import path from 'path';
+import { handleUltra } from './ultra/engine.js';
+import { UltraArgsSchema } from './ultra/schema.js';
 import { handleWindowsDesktop } from './tools/windows-desktop.js';
 import { listWindowsCompanionTools, callWindowsCompanionTool } from './tools/windows-companion.js';
 import { handleTakeScreenshot } from './tools/screenshot.js';
@@ -323,6 +325,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         // Build complete tools array
         const allTools = [
             // Configuration tools
+            // Owner-authorized, unattended automation. OS and remote-client permissions remain enforced.
+            {
+                name: "ultra_control",
+                description: "Desktop Commander Ultra owner tools. status: current device/active jobs; enable/disable: toggle this server's trusted local profile (no internal command or folder blocklist); task_start: run 1-25 PowerShell commands sequentially in a background job with retry; task_status/task_cancel: track or stop a job; project_scan: list a project and its Git state; dashboard_start/stop: localhost-only control panel; power: Windows shutdown/restart/abort (30-second delay). Do not claim host/client prompts are suppressed. The user must authorize the device, and Windows permissions still apply.",
+                inputSchema: zodToJsonSchema(UltraArgsSchema),
+                annotations: { title: "Desktop Commander Ultra", readOnlyHint: false, destructiveHint: true, openWorldHint: true },
+            },
             {
                 name: "get_config",
                 description: `
@@ -1298,6 +1307,9 @@ async function handleCallToolRequest(request: CallToolRequest): Promise<ServerRe
 
         switch (name) {
             // Config tools
+            case "ultra_control":
+                result = await handleUltra(UltraArgsSchema.parse(args));
+                break;
             case "get_config":
                 try {
                     result = await getConfig();
